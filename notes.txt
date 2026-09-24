@@ -1,0 +1,54 @@
+Подключение по протоколу mysql:
+mysql -h 127.0.0.1 -P 9306
+
+Создание нового пользователя:
+CREATE USER 'ingest' IDENTIFIED BY '4?@2%_M=E*Og2NqM';
+
+Права пользователю:
+GRANT read ON 'products' TO 'app_read';
+GRANT write ON 'products' TO 'ingest';
+GRANT read ON * TO 'api_user';
+GRANT write ON * TO 'api_user';
+GRANT schema ON * TO 'api_user';
+
+Проверьте пользователей и их права доступа:
+SHOW USERS;
+SHOW PERMISSIONS;
+SHOW PERMISSIONS FOR 'app_read';
+
+===============================
+Superuser manticore:
+root.manticore
+6wmg&rFGN6Wq
+MYSQL_PWD="7C6lo@LdK@#mO\d6" mysql -h0 -P9306 -uroot.manticore
+
+ingest
+MYSQL_PWD="4?@2%_M=E*Og2NqM" mysql -h0 -P9306 -uingest
+===============================
+
+Стемминг:
+CALL KEYWORDS('бегущий садовод столик', 'table_1');
+
+KNN
+CREATE TABLE products (
+title TEXT,
+description TEXT,
+category STRING,
+price INT,
+vector FLOAT_VECTOR KNN_TYPE='hnsw' HNSW_SIMILARITY='l2' MODEL_NAME='sentence-transformers/all-MiniLM-L6-v2' FROM='title,description'
+);
+
+__PRODUCTION__
+1) Linux добавить в автозагрузку:
+   sudo systemctl enable manticore
+2) Отключить http
+#    listen = 9308:http
+3)
+
+
+# 1. Создайте директорию для бинарных логов
+sudo mkdir -p /var/lib/manticore/binlog
+# 2. Смените владельца на пользователя, под которым работает Manticore
+sudo chown manticore:manticore /var/lib/manticore/binlog
+# 3. Установите правильные права доступа (rwx для владельца)
+sudo chmod 755 /var/lib/manticore/binlog

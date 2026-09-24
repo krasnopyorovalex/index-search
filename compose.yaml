@@ -1,7 +1,7 @@
 services:
     laravel.test:
         build:
-            context: './vendor/laravel/sail/runtimes/8.5'
+            context: './docker/8.5'
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
@@ -14,6 +14,7 @@ services:
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
+            PHP_IDE_CONFIG: "serverName=docker-sail"
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
@@ -24,6 +25,7 @@ services:
         depends_on:
             - mysql
             - redis
+            - manticore
     mysql:
         image: 'mysql:8.4'
         ports:
@@ -38,9 +40,10 @@ services:
             MYSQL_EXTRA_OPTIONS: '${MYSQL_EXTRA_OPTIONS:-}'
         volumes:
             - 'sail-mysql:/var/lib/mysql'
-            - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+            - './docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
             - sail
+        command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
         healthcheck:
             test:
                 - CMD
@@ -49,6 +52,28 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    manticore:
+        image: manticoresearch/manticore:29.0.2
+        container_name: manticore
+        user: 'manticore'
+        build:
+            context: './docker/manticore'
+            dockerfile: Dockerfile
+        ports:
+            - "9306:9306"
+            - "9308:9308"
+        volumes:
+            - ./docker/manticore/manticore.conf:/etc/manticoresearch/manticore.conf
+            - manticore_data:/var/lib/manticore
+            - manticore_logs:/var/log/manticore
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 65535
+                hard: 65535
+        networks:
+            - sail
+        restart: unless-stopped
     redis:
         image: 'redis:alpine'
         ports:
@@ -71,4 +96,8 @@ volumes:
     sail-mysql:
         driver: local
     sail-redis:
+        driver: local
+    manticore_data:
+        driver: local
+    manticore_logs:
         driver: local
